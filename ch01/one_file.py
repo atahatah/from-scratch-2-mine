@@ -142,7 +142,7 @@ class SGD:
 
 
 # ハイパラメータの設定
-max_epoch = 3000
+max_epoch = 300
 batch_size = 30
 hidden_size = 10
 learning_rate = 1.0
@@ -180,11 +180,11 @@ for epoch in range(max_epoch):
         loss_count += 1
 
         # 定期的に学習経過を出力
-        # if(iters+1) % 10 == 0:
-        #     avg_loss = total_loss / loss_count
-        #     print('| epoch %d |  iter %d / %d | loss %.2f' %
-        #           (epoch + 1, iters + 1, max_iters, avg_loss))
-        #     loss_list.append((avg_loss))
-        #     total_loss, loss_count = 0, 0
+        if(iters+1) % 10 == 0:
+            avg_loss = total_loss / loss_count
+            print('| epoch %d |  iter %d / %d | loss %.2f' %
+                  (epoch + 1, iters + 1, max_iters, avg_loss))
+            loss_list.append((avg_loss))
+            total_loss, loss_count = 0, 0
 
 print(time.time() - start)

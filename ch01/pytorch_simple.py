@@ -1,106 +1,91 @@
 import torch
-import torch
 from torch import nn
 from torch.utils.data import DataLoader
-from torchvision import datasets
-from torchvision.transforms import ToTensor, Lambda, Compose
-import matplotlib.pyplot as plt
 
 from dataset import spiral
 import numpy as np
+import time
 
 
 class SpiralDataset:
-    def __init__(self):
+    def __init__(self, device):
         self.x, self.y = spiral.load_data()
+        self.device = device
 
     def __len__(self):
         return len(self.x)
 
     def __getitem__(self, idx):
-        x = torch.from_numpy(self.x[idx].astype(np.float32)).clone()
+        x = torch.from_numpy(self.x[idx].astype(np.float32)).clone().to(device)
         y = self.y[idx].argmax()
         return x, y
 
 
-batch_size = 64
-
-train_dataloader = DataLoader(SpiralDataset(), batch_size=batch_size)
-test_dataloader = DataLoader(SpiralDataset(), batch_size=batch_size)
-
-for X, y in test_dataloader:
-    print(X)
-    print(y)
-    print("Shape of X [N, C, H, W]: ", X.shape)
-    print("Shape of y: ", y.shape, y.dtype)
-    break
-
-device = "cuda" if torch.cuda.is_available() else "cpu"
-print("Using {} device".format(device))
-
-
-class NeuralNetwork(nn.Module):
-    def __init__(self):
-        super(NeuralNetwork, self).__init__()
-        self.flatten = nn.Flatten()
+class TwoLayerNet(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size):
+        super(TwoLayerNet, self).__init__()
         self.liner_relu_stack = nn.Sequential(
-            nn.Linear(2, 512),
-            nn.ReLU(),
-            nn.Linear(512, 512),
-            nn.ReLU(),
-            nn.Linear(512, 10),
-            nn.ReLU(),
+            nn.Linear(input_size, hidden_size),
+            nn.Sigmoid(),
+            nn.Linear(hidden_size, output_size),
         )
 
     def forward(self, x):
-        x = self.flatten(x)
         logits = self.liner_relu_stack(x)
         return logits
 
 
-model = NeuralNetwork().to(device)
-print(model)
+# GPUを使うかの設定
+device = "cuda" if torch.cuda.is_available() else "cpu"
+# device = "cpu" # 強制的にCPUを使わせる
+print("Using {} device".format(device))
 
+# ハイパラメータの設定
+max_epoch = 300
+batch_size = 30
+hidden_size = 10
+learning_rate = 1.0
+
+# データの読み込み、モデルとオプティマイザの生成
+train_dataloader = DataLoader(
+    SpiralDataset(device), batch_size=batch_size, shuffle=True)
+
+model = TwoLayerNet(input_size=2, hidden_size=hidden_size,
+                    output_size=3).to(device)
+
+# nn.LogSoftmaxとnn.NLLLoss(Negative Log Likelihood)を結合した損失関数
 loss_fn = nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
+# 学習で使用する変数
+data_size = len(train_dataloader.dataset)
+max_iters = data_size // batch_size
+total_loss = 0
+loss_count = 0
+loss_list = []
 
-def train(dataloader, model, loss_fn, optimizer):
-    size = len(dataloader.dataset)
-    for batch, (X, y) in enumerate(dataloader):
-        X, y = X.to(device), y.to(device)
+start = time.time()
 
-        pred = model(X)
-        loss = loss_fn(pred, y)
+for epoch in range(max_epoch):
+    for iters, (batch_x, batch_y) in enumerate(train_dataloader):
+        batch_x = batch_x.to(device)
+        batch_y = batch_y.to(device)
+        # 勾配を求め、パラメータを更新
+        pred = model(batch_x)
+        loss = loss_fn(pred, batch_y)
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-        if batch % 100 == 0:
-            loss, current = loss.item(), batch * len(X)
-            print(f"loss: {loss:>7f} [{current:>5d}/{size:>5d}]")
+        total_loss += loss
+        loss_count += 1
 
+        if (iters+1) % 10 == 0:
+            avg_loss = total_loss / loss_count
+            print('| epoch %d |  iter %d / %d | loss %.2f' %
+                  (epoch + 1, iters + 1, max_iters, avg_loss))
+            loss_list.append((avg_loss))
+            total_loss, loss_count = 0, 0
 
-def test(dataloader, model):
-    size = len(dataloader.dataset)
-    model.eval()
-    test_loss, correct = 0, 0
-    with torch.no_grad():
-        for X, y in dataloader:
-            X, y = X.to(device), y.to(device)
-            pred = model(X)
-            test_loss += loss_fn(pred, y).item()
-            correct += (pred.argmax(1) == y).type(torch.float).sum().item()
-    test_loss /= size
-    correct /= size
-    print(
-        f"Test Error: \n Accuracy: {(100*correct):>0.1f}% Avg loss: {test_loss:>8f} \n")
-
-
-epochs = 5
-for t in range(epochs):
-    print(f"Epoch {t+1}\n--------------------------")
-    train(train_dataloader, model, loss_fn, optimizer)
-    test(test_dataloader, model)
-print("Done!")
+print(time.time() - start)
