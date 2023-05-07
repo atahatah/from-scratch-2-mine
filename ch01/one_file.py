@@ -149,6 +149,8 @@ learning_rate = 1.0
 
 # データの読み込み、モデルとオプティマイザの生成
 x, t = spiral.load_data()
+x = np.array(x)
+t = np.array(t)
 
 model = TwoLayerNet(input_size=2, hidden_size=hidden_size, output_size=3)
 optimizer = SGD(lr=learning_rate)
