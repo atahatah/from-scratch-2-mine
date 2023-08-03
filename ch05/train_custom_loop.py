@@ -60,6 +60,26 @@ for epoch in range(max_epoch):
     
     # evaluate perplexity on each epoch
     ppl = np.exp(total_loss / loss_count)
-    print('| epoch %d | perplexity %.2f' % (epoch+1, ppl))
+    # print('| epoch %d | perplexity %.2f' % (epoch+1, ppl))
     ppl_list.append(float(ppl))
     total_loss, loss_count = 0, 0
+
+print('******************************************************************')
+model.reset_state()
+words = ['you', 'said', 'u.s.', 'and']
+ids = []
+for word in words:
+    ids.append(word_to_id[word])
+
+print('-----------------------ids------------------------')
+print(ids)
+
+scores = model.evaluate(np.array([ids]))
+print('-----------------------scores------------------------')
+print(scores)
+print('-----------------------result------------------------')
+result = np.argmax(scores, axis=2)
+print(result)
+
+for id in result[0]:
+    print(id_to_word[id])

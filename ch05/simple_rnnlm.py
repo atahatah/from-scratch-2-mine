@@ -37,6 +37,11 @@ class SimpleRnnlm:
         loss = self.loss_layer.forward(xs, ts)
         return loss
     
+    def evaluate(self, xs):
+        for layer in self.layers:
+            xs = layer.forward(xs)
+        return xs
+    
     def backward(self, dout=1):
         dout = self.loss_layer.backward(dout)
         for layer in reversed(self.layers):
