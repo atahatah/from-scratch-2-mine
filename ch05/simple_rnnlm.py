@@ -2,6 +2,7 @@ import sys
 sys.path.append('..')
 import numpy as np
 from common.time_layers import *
+import pickle
 
 class SimpleRnnlm:
     def __init__(self, vocab_size, wordvec_size, hidden_size):
@@ -37,10 +38,28 @@ class SimpleRnnlm:
         loss = self.loss_layer.forward(xs, ts)
         return loss
     
-    def evaluate(self, xs):
+    def predict(self, xs):
         for layer in self.layers:
             xs = layer.forward(xs)
         return xs
+    
+    def generate(self, start_id, max_size=100):
+        word_ids = [start_id]
+        
+        x = start_id
+        while len(word_ids) < max_size:
+            x = np.array(x).reshape(1, 1)
+            score = self.predict(x)
+            p = softmax(score.flatten())
+            
+            sampled = np.random.choice(len(p), size=1, p=p)
+            x = sampled
+            word_ids.append(int(x))
+        return word_ids
+    
+    def save_params(self, file_name='Rnnlm.pkl'):
+        with open(file_name, 'wb') as f:
+            pickle.dump(self.params, f)
     
     def backward(self, dout=1):
         dout = self.loss_layer.backward(dout)

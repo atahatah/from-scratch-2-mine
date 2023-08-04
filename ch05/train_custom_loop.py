@@ -7,16 +7,16 @@ from dataset import ptb
 from simple_rnnlm import SimpleRnnlm
 
 # settings of hyper-parameters
-batch_size = 10
-wordvec_size = 100
-hidden_size = 100 # the number of elements of RNN's hidden state vector
-time_size = 5
-lr = 0.1
-max_epoch = 100
+batch_size = 100
+wordvec_size = 250
+hidden_size = 250 # the number of elements of RNN's hidden state vector
+time_size = 10
+lr = 0.05
+max_epoch = 1000
 
 # load learning data (minimize the dataset)
 corpus, word_to_id, id_to_word = ptb.load_data('train')
-corpus_size = 1000
+corpus_size = 400000
 corpus = corpus[:corpus_size]
 vocab_size = int(max(corpus) + 1)
 
@@ -60,26 +60,22 @@ for epoch in range(max_epoch):
     
     # evaluate perplexity on each epoch
     ppl = np.exp(total_loss / loss_count)
-    # print('| epoch %d | perplexity %.2f' % (epoch+1, ppl))
+    print('| epoch %d | perplexity %.2f' % (epoch+1, ppl))
     ppl_list.append(float(ppl))
+    if ppl < 4.0:
+        break
     total_loss, loss_count = 0, 0
+
+model.save_params()
 
 print('******************************************************************')
 model.reset_state()
-words = ['you', 'said', 'u.s.', 'and']
-ids = []
-for word in words:
-    ids.append(word_to_id[word])
 
-print('-----------------------ids------------------------')
-print(ids)
+word_ids = model.generate(word_to_id["you"])
 
-scores = model.evaluate(np.array([ids]))
-print('-----------------------scores------------------------')
-print(scores)
-print('-----------------------result------------------------')
-result = np.argmax(scores, axis=2)
-print(result)
-
-for id in result[0]:
-    print(id_to_word[id])
+for id in word_ids:
+    word = id_to_word[id]
+    if word != "<eos>":
+        print(' '+word, end='')
+    else:
+        print('.')
