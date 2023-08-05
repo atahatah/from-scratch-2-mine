@@ -43,7 +43,7 @@ class SimpleRnnlm:
             xs = layer.forward(xs)
         return xs
     
-    def generate(self, start_id, max_size=100):
+    def generate(self, start_id, skip_ids=None, max_size=100):
         word_ids = [start_id]
         
         x = start_id
@@ -53,13 +53,18 @@ class SimpleRnnlm:
             p = softmax(score.flatten())
             
             sampled = np.random.choice(len(p), size=1, p=p)
-            x = sampled
-            word_ids.append(int(x))
+            if (skip_ids is None) or (sampled not in skip_ids):
+                x = sampled
+                word_ids.append(int(x))
         return word_ids
     
     def save_params(self, file_name='Rnnlm.pkl'):
         with open(file_name, 'wb') as f:
             pickle.dump(self.params, f)
+    
+    def load_params(self, file_name='Rnnlm.pkl'):
+        with open(file_name, 'rb') as f:
+            self.params = pickle.load(f)
     
     def backward(self, dout=1):
         dout = self.loss_layer.backward(dout)

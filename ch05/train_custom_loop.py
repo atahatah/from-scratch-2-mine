@@ -8,15 +8,15 @@ from simple_rnnlm import SimpleRnnlm
 
 # settings of hyper-parameters
 batch_size = 100
-wordvec_size = 250
-hidden_size = 250 # the number of elements of RNN's hidden state vector
+wordvec_size = 150
+hidden_size = 150 # the number of elements of RNN's hidden state vector
 time_size = 10
-lr = 0.05
+lr = 0.15
 max_epoch = 1000
 
 # load learning data (minimize the dataset)
 corpus, word_to_id, id_to_word = ptb.load_data('train')
-corpus_size = 400000
+corpus_size = 929589
 corpus = corpus[:corpus_size]
 vocab_size = int(max(corpus) + 1)
 
