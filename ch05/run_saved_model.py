@@ -7,11 +7,13 @@ from dataset import ptb
 from simple_rnnlm import SimpleRnnlm
 
 # settings of hyper-parameters
-wordvec_size = 100
-hidden_size = 100 # the number of elements of RNN's hidden state vector
+wordvec_size = 150
+hidden_size = 150 # the number of elements of RNN's hidden state vector
 
 # load learning data (minimize the dataset)
 corpus, word_to_id, id_to_word = ptb.load_data('train')
+corpus_size = 929589
+corpus = corpus[:corpus_size]
 vocab_size = int(max(corpus) + 1)
 
 # generation of the model
@@ -24,7 +26,7 @@ model.reset_state()
 skip_words = ['<unk>']
 skip_ids = [word_to_id[w] for w in skip_words]
 
-start_word = "you"
+start_word = "we"
 start_id = word_to_id[start_word]
 
 word_ids = model.generate(start_id, skip_ids=skip_ids)
